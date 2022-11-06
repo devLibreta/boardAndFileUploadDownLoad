@@ -1,0 +1,157 @@
+# boardAndFileUploadDownLoad
+basic board + file upload + file download
+
+
+ 출처: https://kyuhyuk.kr/category/Spring-Boot
+ 따라하기를 통해 새로 배운 정보를 정리하는 페이지입니다.
+ 2022-11-06 created
+
+// =====================================================================================================================
+// gradle - webjars config
+
+ webjars 라이브러리를 추가함으로써 의존성 버전관리를 쉽게 할수 있다.
+-----------------------------------------
+<head>
+<link rel="stylesheet" href="/webjars/bootstrap/5.2.2/css/bootstrap.min.css" />
+</head>
+<body>
+<script src="/webjars/jquery/3.6.1/jquery.min.js"></script>
+<script src="/webjars/bootstrap/5.2.2/js/bootstrap.min.js"></script>
+</body>
+
+-----------------------------------------
+
+runtimeOnly 'org.webjars:jquery:3.6.1'
+runtimeOnly 'org.webjars:bootstrap:5.2.2'
+
+// =====================================================================================================================
+// thymeleaf
+
+ reference: https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html#dates
+ 타임리프에서 지원하는 날짜 포맷 변환 함수
+ timezone 속성은 클라이언트가 보는 시간대에 따라 시간이 다르다.
+-----------------------------------------
+String -> Date
+ - th:text="${#temporals.format(post.createdDate, 'yyyy-MM-dd HH:mm')}”
+Date -> Date
+ - th:text="${#dates.format(post.createdDate, 'yyyy-MM-dd HH:mm:ss')}"
+Create a date (java.util.Date) object for the current date and time
+ - ${#dates.createNow()}
+ - ${#dates.createNowForTimeZone()}
+Create a date (java.util.Date) object for the current date (time set to 00:00)
+ - ${#dates.createToday()}
+ - ${#dates.createTodayForTimeZone()}
+
+// =====================================================================================================================
+// java - optional
+
+옵셔널 객체에 get()함수 호출 시 본래 값이 없으면 NullPointerException 이 발생한다.
+get()함수 대신에 orElseThrow() 함수 호출 시 값이 존재할 경우 값을 리턴하고, 없을 경우에는 NullPointerException 이 발생한다.
+여기서, 소괄호 내부 인자를 받아서 정해진 RunTimeException 을 발생시킬수 있다.
+-----------------------------------------
+Board board = boardRepository.findById(id).orElseThrow(()-> new RuntimeException()); // 람다식
+Board board = boardRepository.findById(id).orElseThrow(RuntimeException::new); // 메소드 레퍼런스
+
+// =====================================================================================================================
+// html - <textarea>
+
+<textarea>는 value 속성에 값이 있어도 출력되지 않기에 태그 사이에 값을 넣어야한다.
+
+// =====================================================================================================================
+// meta - domain name
+
+게시글에 대한 작업을 처리할 경우 매핑 도메인 네임을 지정할 때 @PathVariable 속성을 활용해서 지정하면
+보기 좋다.
+-----------------------------------------
+읽기는 /post/{id} @GetMapping
+저장 페이지는 /post @GetMapping
+저장은 /post/{id} @PostMapping
+수정 페이지는 /post/edit/{id} @GetMapping
+수정은 /post/edit/{id} @PutMapping
+삭제는 /post/{id} @DeleteMapping
+// =====================================================================================================================
+// jpa - Date
+
+생성일자 자동 생성 config
+-----------------------------------------
+Entity class
+    - @EntityListeners(AuditingEntityListener.class) : 엔티티 클래스 어노테이션
+    - @CreatedDate @Column(updatable = false) : 생성일자 컬럼 어노테이션
+    - @LastModifiedDate : 수정일자 컬럼 어노테이션
+MainApplication
+    - @EnableJpaAuditing : 클래스 어노테이션
+-----------------------------------------
+LocalDataTime createdDate //2022-11-06 12:24:48.177000
+
+// =====================================================================================================================
+// java - @Bean config
+
+@Configuration 어노테이션 달린 클래스는 빈 스캐너에 자동 검색된다.
+@Bean 으로 등록한 메소드의 return 객체를 Bean 으로 등록한다.
+@Bean("name")으로 이름 지정 가능하며, 미지정 시 메소드 명이 id가 된다.
+-----------------------------------------
+@Configuration
+@RequiredArgsConstructor
+public class BoardConfig {
+    @Bean
+    public HiddenHttpMethodFilter hiddenHttpMethodFilter() {
+        return new HiddenHttpMethodFilter();
+    }
+}
+// =====================================================================================================================
+// java - HiddenHttpMethodFilter
+
+html 에서는 get 과 post form 만 지원하지 put 이나 delete 를 지원하지 않는다.
+그래서 post form 자식으로 숨겨진 input 태그를 넣어서 우회 사용하고 있다.
+ 스프링에서는 이러한 방식을 쓰려면 HiddenHttpMethodFilter 를 @Bean 으로 등록을 해야 사용가능하다.
+
+ HiddenHttpMethodFilter 는 Hidden 타입의 input 태그의 속성들을 읽어서 HttpServletRequestWrapper.getMethod() 반환 값을 변경해
+ 요청된 HTTP 메소드의 타입을 PUT, DELETE, PATCH 로 변경해주는 필터이다.
+ -----------------------------------------
+ "<input type="hidden" name="_method" value="put"/>"
+ "<input type="hidden" name="_method" value="patch"/>"
+ "<input type="hidden" name="_method" value="delete"/>"
+
+// =====================================================================================================================
+// etc - encoding
+
+ 단방향 암호화란 문자를 암호화한 후 복호화할 수 없고, 확인 방법은 같은 값을 암호화해서 서로 비교하는 방법 뿐이다.
+ 인코딩 후 암호화된 결과값을 우리는 해시(hash) 값, 해시 체크썸(checksum) 혹은 해시라고 부른다.
+
+ MD5는 단방향 암호화 알고리즘으로 필요 자원이 적어 대용량 파일의 무결성 검사하는데 사용한다.
+ 비밀번호와 같은 값들의 보안에 쓰이는 알고리즘은 bcrypt, scrypt, Argon2id 등이 있다.
+ 당연하지만 보안이 좋은 알고리즘은 느리다.
+
+// =====================================================================================================================
+// java - StringBuilder
+
+String 과 거의 유사한 문자열 객체. 다른점은 String 과 달리 문자를 더하거나 뺴는 작업이 같은 instance 안에서 이루어져서 성능을 향상시킴.
+
+// =====================================================================================================================
+// java - e.printStackTrace()
+
+ try~catch 문에서 예외 발생 시 로그를 출력하는 메소드
+ -----------------------------------------
+StringWriter sw = new StringWriter();
+PrintWriter pw = new PrintWriter(sw);
+
+pw.append("+++Start printing trace:\n");
+e.printStackTrace(pw);
+pw.append("---Finish printing trace");
+System.out.println(sw.toString());
+-----------------------------------------
+ 디버깅 목적 trace 남기는 법
+ - (new Throwable()).printStackTrace();
+
+// =====================================================================================================================
+// java - System.getProperty({keyword})
+
+시스템 정보를 가져오는 메소드
+-----------------------------------------
+keyword
+ - user.name	사용자 계정
+ - user.home	사용자 홈 디렉토리
+ - user.dir	현재 디렉토리
+ -----------------------------------------
+ System.getProperty("user.dir") -> 실행하고 있는 프로젝트 디렉토리
+// =====================================================================================================================
