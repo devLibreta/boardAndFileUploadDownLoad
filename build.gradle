@@ -28,6 +28,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    runtimeOnly 'org.webjars:jquery:3.6.1'
+    runtimeOnly 'org.webjars:bootstrap:5.2.2'
 }
 
 tasks.named('test') {
